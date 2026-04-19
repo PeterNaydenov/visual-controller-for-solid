@@ -23,7 +23,7 @@ document
 
 
 document
-  .getElementById('increment')
+  .getElementById ( 'increment' )
   .addEventListener ( 'click', () => {
             const app = html.getApp('app')
             if (app) app.increment()
@@ -32,7 +32,7 @@ document
 
 
 document
-  .getElementById('getCount')
+  .getElementById ( 'getCount' )
   .addEventListener ( 'click', () => {
             const app = html.getApp('app')
             if (app) {
@@ -47,5 +47,5 @@ document
   .addEventListener ( 'click', () => {
             const result = html.destroy('app')
             document.getElementById('resultText').textContent = 'Destroyed: ' + result
-            document.getElementById('hasText').textContent = html.has('app')
+            document.getElementById('hasText').textContent = html.has ( 'app' )
       })
