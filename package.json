@@ -1,0 +1,37 @@
+{
+  "name": "@peter.naydenov/visual-controller-for-solid",
+  "version": "1.0.0",
+  "description": "Tool for building micro-frontends(MFE) based on Solid components - Start multiple Solid applications on the same HTML page and control them",
+  "type": "module",
+  "main": "./src/main.js",
+  "exports": {
+    ".": "./src/main.js",
+    "import": "./src/main.js",
+    "require": "./src/main.js"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "ask-for-promise": "^3.1.0",
+    "solid-js": "^1.9.12"
+  },
+  "devDependencies": {
+    "vite": "^8.0.4",
+    "vite-plugin-solid": "^2.11.12"
+  },
+  "keywords": [
+    "solid",
+    "micro-frontend",
+    "mfe",
+    "visual controller"
+  ],
+  "author": "Peter Naydenov",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PeterNaydenov/visual-controller-for-solid"
+  }
+}
