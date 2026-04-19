@@ -1,17 +1,32 @@
 {
   "name": "@peter.naydenov/visual-controller-for-solid",
-  "version": "1.0.0",
   "description": "Tool for building micro-frontends(MFE) based on Solid components - Start multiple Solid applications on the same HTML page and control them",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "Peter Naydenov",
   "type": "module",
-  "main": "./src/main.js",
+  "main": "src/main.js",
+  "module": "dist/visual-controller-for-solid.esm.js",
+  "types": "dist/main.d.ts",
+  "unpkg": "dist/visual-controller-for-solid.umd.js",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "exports": {
-    ".": "./src/main.js",
-    "import": "./src/main.js",
-    "require": "./src/main.js"
+    ".": {
+      "import": "dist/visual-controller-for-solid.esm.js",
+      "require": "dist/visual-controller-for-solid.cjs"
+    }
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run types",
+    "types": "tsc -p tsconfig.types.json",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -19,19 +34,23 @@
     "solid-js": "^1.9.12"
   },
   "devDependencies": {
+    "typescript": "^6.0.3",
     "vite": "^8.0.4",
+    "vite-plugin-dts": "^4.5.4",
     "vite-plugin-solid": "^2.11.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PeterNaydenov/visual-controller-for-solid.git"
+  },
+  "homepage": "https://github.com/PeterNaydenov/visual-controller-for-solid#readme",
+  "bugs": {
+    "url": "https://github.com/PeterNaydenov/visual-controller-for-solid/issues"
   },
   "keywords": [
     "solid",
     "micro-frontend",
-    "mfe",
+    "MFE",
     "visual controller"
-  ],
-  "author": "Peter Naydenov",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/PeterNaydenov/visual-controller-for-solid"
-  }
+  ]
 }

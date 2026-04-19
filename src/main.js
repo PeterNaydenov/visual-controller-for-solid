@@ -6,8 +6,8 @@
  *  History notes:
  *   - Development started on April 19th, 2026
  *   - Published on GitHub for first time: April 19th, 2026
- *  
  */
+
 
 
 import { render, hydrate } from 'solid-js/web'
@@ -16,38 +16,60 @@ import askForPromise from 'ask-for-promise'
 
 
 /**
- * Visual Controller for Solid
- * Controls multiple Solid apps with a single controller.
- * 
- * @param {Object} dependencies - Object with dependencies that should be available for all components
- * @return {Object} - Object with methods: publish, destroy, getApp, has
- * @example
- * const html = new VisualController ({ eBus })
- * html.publish ( Test, {greeting:'Hi'}, 'app' )
+ * Configuration options for VisualController
+ * @typedef {Object} VisualControllerOptions
+ * @property {Object} [dependencies] - Object with dependencies that should be available for all components
  */
-function VisualController ( dependencies={} ) {
+
+/**
+ * Methods exposed for external component control
+ * @typedef {Object} UpdateMethods
+ * @property {Function} [methodName: string] - Any method registered via setupUpdates
+ */
+
+/**
+ * Props passed to Solid components
+ * @typedef {Object} SolidComponentProps
+ * @property {Object} dependencies - Dependencies provided during VisualController initialization
+ * @property {Object} data - Data passed as second argument to publish
+ * @property {Function} setupUpdates - Function to register external update methods
+ */
+
+/**
+ * VisualController return object
+ * @typedef {Object} VisualControllerAPI
+ * @property {Function} publish - Publish a Solid app
+ * @property {Function} destroy - Destroy a Solid app
+ * @property {Function} getApp - Get app update methods
+ * @property {Function} has - Check if app exists
+ */
+
+
+
+/**
+ * Visual Controller for Solid
+ * @param {VisualControllerOptions} [options] - Configuration options
+ * @returns {VisualControllerAPI} - Object with methods: publish, destroy, getApp, has
+ */
+function VisualController ( options = {} ) {
+        const { dependencies = {} } = options
         const 
-                  cache = {}  // collect solid apps
-                , updateInterface = {}
+                  cache = {}  /** @type {Object.<string, function>} */
+                , updateInterface = {}  /** @type {Object.<string, UpdateMethods>} */
                 ;
-
-
 
     /**
      * Publish a Solid app
-     * @param {Function} solidFn - Solid component
-     * @param {Object} data - Data for the Solid component
-     * @param {string} id - Id of the container where Solid-app will live
-     * @return {Promise|boolean} - Promise that will be resolved when the application is ready, or false on error
-     * @example
-     * const html = new VisualController ({ eBus })
-     * html.publish ( Test, {greeting:'Hi'}, 'app' )
+     * @param {Function} component - Solid component function
+     * @param {Object} [data] - Data for the Solid component
+     * @param {string} id - Id of the container
+     * @returns {Promise<UpdateMethods>|boolean}
      */
-    function publish  (solidFn, data, id) {
+    function publish  (component, data = {}, id) {
                 const hasKey = cache[id] ? true : false;
                 let   node;
                 
-                if ( !solidFn ) {
+                if ( !component ) {
                         console.error ( `Error: Component is undefined` )
                         return false
                    }
@@ -68,11 +90,11 @@ function VisualController ( dependencies={} ) {
                     ;
 
                 if ( node.innerHTML.trim () ) {   // Hydrate SSR result
-                            dispose = hydrate ( () => solidFn(props), node )
+                            dispose = hydrate ( () => component(props), node )
                             setTimeout ( () =>  loadTask.done (), 1 )
                     }
                 else {   // Start a new Solid App
-                            dispose = render ( () => solidFn(props), node )
+                            dispose = render ( () => component(props), node )
                             setTimeout ( () =>  loadTask.done (), 1 )
                     }
 
@@ -84,12 +106,9 @@ function VisualController ( dependencies={} ) {
 
 
     /**
-     * Destroy a Solid app by using container name
-     * @param {string} id - Id of the container where Solid-app lives
-     * @return {boolean} - Returns true on success and false on failure
-     * @example
-     * const html = new VisualController ({ eBus })
-     * html.destroy ( 'app' )
+     * Destroy a Solid app
+     * @param {string} id - Id of the container
+     * @returns {boolean}
      */
     function destroy (id) {
                 const htmlKeys = Object.keys(cache);
@@ -106,13 +125,9 @@ function VisualController ( dependencies={} ) {
 
             
     /**
-     * Returns an object with update-methods for Solid-app defined by calling the `props.setupUpdates` function from within the component.
-     * @param {string} id - Id of the container where Solid-app lives
-     * @return {object} - Object with update-methods for Solid-app or false on failure
-     * @example
-     * const html = new VisualController ({ eBus })
-     * const app = html.getApp ( 'app' )
-     * if ( app )   app.pushPlay () // use update methods of the component
+     * Get app update methods
+     * @param {string} id - Id of the container
+     * @returns {UpdateMethods|false}
      */
     function getApp (id) {
                 const item = updateInterface[id];
@@ -126,13 +141,9 @@ function VisualController ( dependencies={} ) {
 
     
     /**
-     * Checks if app with specific "id" was published
-     * @param {string} id - Id of the container where Solid-app lives
-     * @return {boolean} - Returns true if app with specific id exists, false otherwise
-     * @example
-     * const html = new VisualController ({ eBus })
-     * const has = html.has ( 'app' )
-     * if ( has )   console.log ( 'App is available' )
+     * Check if app exists
+     * @param {string} id - Id of the container
+     * @returns {boolean}
      */
     function has ( id ) {
                 return cache[id] ? true : false
