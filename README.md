@@ -153,8 +153,8 @@ html.destroy ( containerID )
 ### Extra
 
 Visual Controller has versions for few other front-end frameworks:
-- [React](https://github.com/PeterNaydenov/visual-controller-for-react)
 - [Vue 3](https://github.com/PeterNaydenov/visual-controller-for-vue3)
+- [React](https://github.com/PeterNaydenov/visual-controller-for-react)
 - [Svelte 5](https://github.com/PeterNaydenov/visual-controller-for-svelte5)
 - [Vue 2](https://github.com/PeterNaydenov/visual-controller-for-vue)
 - [Svelte 3 and 4](https://github.com/PeterNaydenov/visual-controller-for-svelte3)
