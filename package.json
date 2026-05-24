@@ -32,7 +32,7 @@
     "cover": "vitest run --coverage"
   },
   "dependencies": {
-    "ask-for-promise": "^3.1.0",
+    "ask-for-promise": "^3.1.1",
     "solid-js": "^1.9.12"
   },
   "devDependencies": {
