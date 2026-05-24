@@ -1,6 +1,11 @@
 # Release History
 
 
+## 1.0.1 (2026-05-24)
+- [x] Dependency update. Ask-for-promise v3.1.1;
+- [x] Dependency update. Solid-js v1.9.13;
+
+
 
 ## 1.0.0 (2026-04-19)
 - [x] Initial release;
