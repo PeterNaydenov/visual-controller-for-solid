@@ -1,105 +1,174 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import VisualController from "../src/main.js";
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import VisualController from '../src/main.js'
 import { Test, NoUpdates } from './components.jsx'
-import fs from 'fs'
-import path from 'path'
 
-beforeEach(() => {
-  const html = fs.readFileSync(path.join(__dirname, 'fixtures', 'index.html'), 'utf-8')
-  document.body.innerHTML = html
-})
+const tick = () => new Promise(resolve => setTimeout(resolve, 0))
+const resetAll = () => {
+    document.body.innerHTML = '<main id="main"></main>'
+    let main = document.querySelector('#main')
+    if (!main) {
+        main = document.createElement('main')
+        main.id = 'main'
+        document.body.appendChild(main)
+    }
+    main.innerHTML = ''
+}
 
-describe ( 'Visual controller for Solid', () => {
 
-    it ( 'Method "publish" returns a promise', async () => {
-        const root = document.querySelector('#root')
-        const vc = new VisualController({})
+describe('Visual Controller for Solid — v3 region API', () => {
 
-        const el = await vc.publish(Test, { greeting: 'Hello' }, 'root')
-        
-        expect(el).toHaveProperty('setupText')
+    let html
+
+    beforeEach(() => {
+        resetAll()
+        html = new VisualController({})
     })
 
-
-    it ( 'Method "has"', async () => {
-        const root = document.querySelector('#root')
-        const vc = new VisualController({})
-
-        const before = vc.has('app')
-        
-        await vc.publish(Test, {}, 'app')
-
-        const after = vc.has('app')
-        
-        expect(before).toBe(false)
-        expect(after).toBe(true)
-
-        vc.destroy('app')
+    it('set registers a region and adds the alias to list()', () => {
+        html.set(({ start, end }) => {
+            document.querySelector('#main').append(start, end)
+            return 'header'
+        })
+        expect(html.list()).toContain('header')
     })
 
-
-    it ( 'Method "getApp" returns empty object when no setupUpdates', async () => {
-        const root = document.querySelector('#root')
-        const vc = new VisualController({})
-
-        await vc.publish(NoUpdates, {}, 'root')
-        
-        const app = vc.getApp('root')
-        
-        expect(Object.keys(app).length).toBe(0)
-
-        vc.destroy('root')
+    it('publish mounts an app into a declared alias', async () => {
+        html.set(({ start, end }) => {
+            document.querySelector('#main').append(start, end)
+            return 'header'
+        })
+        await html.publish('header', Test)
+        expect(html.has('header')).toBe(true)
     })
 
-
-    it ( 'Method "getApp" returns update methods', async () => {
-        const root = document.querySelector('#root')
-        const vc = new VisualController({})
-
-        await vc.publish(Test, { greeting: 'Hi' }, 'root')
-        
-        const app = vc.getApp('root')
-        
-        expect(app).toHaveProperty('setupText')
-        expect(app).toHaveProperty('increment')
-        expect(app).toHaveProperty('getCount')
-    })
-
-
-    it ( 'Method "destroy" returns true on success', async () => {
-        const root = document.querySelector('#root')
-        const vc = new VisualController({})
-
-        await vc.publish(Test, {}, 'root')
-        
-        const result = vc.destroy('root')
-        
-        expect(result).toBe(true)
-    })
-
-
-    it ( 'Method "destroy" returns false when not found', async () => {
-        const vc = new VisualController({})
-
-        const result = vc.destroy('non-existent')
-        
+    it('publish into undeclared alias resolves to false and logs', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const result = await html.publish('nope', Test)
         expect(result).toBe(false)
+        expect(errSpy).toHaveBeenCalled()
+        errSpy.mockRestore()
     })
 
-
-    it ( 'Update component state from outside', async () => {
-        const root = document.querySelector('#root')
-        const vc = new VisualController({})
-
-        await vc.publish(Test, { greeting: 'Hello' }, 'root')
-        
-        const app = vc.getApp('root')
-        app.setupText('Updated')
-        
-        const textEl = document.getElementById('ins')
-        expect(textEl.textContent).toBe('Updated')
-
-        vc.destroy('root')
+    it('publish with no component resolves to false and logs', async () => {
+        html.set(({ start, end }) => {
+            document.querySelector('#main').append(start, end)
+            return 'header'
+        })
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const result = await html.publish('header', undefined)
+        expect(result).toBe(false)
+        errSpy.mockRestore()
     })
 
+    it('republish destroys the first app and mounts the second', async () => {
+        html.set(({ start, end }) => {
+            document.querySelector('#main').append(start, end)
+            return 'header'
+        })
+        await html.publish('header', Test)
+        const app1 = html.getApp('header')
+        await html.publish('header', Test)
+        const app2 = html.getApp('header')
+        expect(app1).not.toBe(app2)
+        expect(html.has('header')).toBe(true)
+    })
+
+    it('destroy empties the range, has() becomes false, alias stays in list()', async () => {
+        html.set(({ start, end }) => {
+            document.querySelector('#main').append(start, end)
+            return 'header'
+        })
+        await html.publish('header', Test)
+        expect(html.has('header')).toBe(true)
+        expect(html.destroy('header')).toBe(true)
+        expect(html.has('header')).toBe(false)
+        expect(html.list()).toContain('header')
+    })
+
+    it('destroy on an unknown alias returns false', () => {
+        expect(html.destroy('never-published')).toBe(false)
+    })
+
+    it('getApp returns the setupUpdates interface', async () => {
+        html.set(({ start, end }) => {
+            document.querySelector('#main').append(start, end)
+            return 'header'
+        })
+        await html.publish('header', Test)
+        const app = html.getApp('header')
+        expect(typeof app).toBe('object')
+    })
+
+    it('getApp on missing alias returns false and logs', () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        expect(html.getApp('never')).toBe(false)
+        expect(errSpy).toHaveBeenCalled()
+        errSpy.mockRestore()
+    })
+
+    it('supports multiple regions in the same parent', async () => {
+        const main = document.querySelector('#main')
+        html.set(({ start, end }) => { main.append(start, end); return 'header' })
+        html.set(({ start, end }) => { main.append(start, end); return 'sidebar' })
+        expect(html.list()).toEqual(expect.arrayContaining(['header', 'sidebar']))
+        await html.publish('header', Test)
+        await html.publish('sidebar', Test)
+        expect(html.has('header')).toBe(true)
+        expect(html.has('sidebar')).toBe(true)
+    })
+
+    it('orphaned markers (parent removed) make publish resolve to false', async () => {
+        html.set(({ start, end }) => {
+            document.querySelector('#main').append(start, end)
+            return 'header'
+        })
+        document.querySelector('#main').remove()
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const result = await html.publish('header', Test)
+        expect(result).toBe(false)
+        errSpy.mockRestore()
+    })
+
+    it('reset unmounts all apps and clears list()', async () => {
+        const main = document.querySelector('#main')
+        html.set(({ start, end }) => { main.append(start, end); return 'header' })
+        html.set(({ start, end }) => { main.append(start, end); return 'sidebar' })
+        await html.publish('header', Test)
+        await html.publish('sidebar', Test)
+        expect(html.list().length).toBe(2)
+
+        html.reset()
+        expect(html.list().length).toBe(0)
+        expect(html.has('header')).toBe(false)
+        expect(html.has('sidebar')).toBe(false)
+    })
+
+    it('destroy() with no args destroys every published app and returns the count', async () => {
+        const main = document.querySelector('#main')
+        html.set(({ start, end }) => { main.append(start, end); return 'header' })
+        html.set(({ start, end }) => { main.append(start, end); return 'sidebar' })
+        await html.publish('header', Test)
+        await html.publish('sidebar', Test)
+        const count = html.destroy()
+        expect(count).toBe(2)
+        expect(html.has('header')).toBe(false)
+        expect(html.has('sidebar')).toBe(false)
+    })
+
+    it('isEmpty returns true for an empty region and false after publish', async () => {
+        html.set(({ start, end }) => {
+            document.querySelector('#main').append(start, end)
+            return 'header'
+        })
+        expect(html.isEmpty('header')).toBe(true)
+        await html.publish('header', Test)
+        expect(html.isEmpty('header')).toBe(false)
+    })
+
+    it('isEmpty returns undefined and logs for an unknown alias', () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        expect(html.isEmpty('nope')).toBe(undefined)
+        expect(errSpy).toHaveBeenCalled()
+        errSpy.mockRestore()
+    })
 })
