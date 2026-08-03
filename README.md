@@ -1,158 +1,169 @@
 # Visual Controller for Solid (@peter.naydenov/visual-controller-for-solid)
 
-![version](https://img.shields.io/github/package-json/v/peterNaydenov/visual-controller-for-solid)
-![license](https://img.shields.io/github/license/peterNaydenov/visual-controller-for-solid)
+![version](https://img.shields.io/github/package-json/v/PeterNaydenov/visual-controller-for-solid)
+![license](https://img.shields.io/github/license/PeterNaydenov/visual-controller-for-solid)
 
+Run multiple Solid applications on the same page from a single controller. Each app gets its own region defined by invisible markers — no DOM ids, wrapper elements, or `getElementById` calls.
 
+## Install
 
-Tool for building a micro-frontends(MFE) based on Solid components - Start multiple Solid applications in the same HTML page and control them.
-
-Install visual controller:
-```
+```bash
 npm i @peter.naydenov/visual-controller-for-solid
 ```
 
-Initialization process:
+## Quick start
+
 ```js
-// for es6 module projects:
-import notice from '@peter.naydenov/notice' // event emitter by your personal choice.
 import VisualController from '@peter.naydenov/visual-controller-for-solid'
+import HeaderApp from './header.jsx'
+import SidebarApp from './sidebar.jsx'
 
+const html = new VisualController({ /* shared dependencies */ })
 
-let 
-      eBus = notice ()
-    , dependencies = { eBus }  // Provide everything that should be exposed to components 
-    , html = new VisualController ( dependencies ) 
-    ;
-// Ready for use...
+html.set(({ start, end }) => {
+    document.querySelector('#main').append(start, end)
+    return 'header'
+})
+
+html.set(({ start, end }) => {
+    document.querySelector('#main').append(start, end)
+    return 'sidebar'
+})
+
+html.publish('header', HeaderApp, { greeting: 'Hi!' })
+html.publish('sidebar', SidebarApp, { title: 'Items' })
 ```
 
-Let's show something on the screen:
-```js
-// Let's have Solid component 'Hello' with prop 'greeting'
-
-html.publish ( Hello, {greeting:'Hi'}, 'app' )
-//arguments are: ( component, props, containerID )
+```html
+<main id="main">
+    <h2>Static page heading</h2>
+    <!-- regions are placed by the JS above; no app wrapper elements are needed. -->
+</main>
 ```
 
-## Inside of the Components
+The callback return value becomes the region alias. Multiple regions can share one parent. Publishing an alias that already has an app destroys the old app and mounts the new one in the same region.
 
-*Note: If your component should be displayed only, that section can be skipped.*
+> **v3 — region-based API.** The previous container-id-based API is no longer used.
 
-All provided libraries during visualController initialization are available through `props.dependencies`. Use `props.setupUpdates` if you need to manipulate component from outside.
+## Component integration
 
-```js
-function Hello (props) {
-  const { dependencies, data, setupUpdates } = props
-  const { eBus } = dependencies
+Components receive shared dependencies, input data, and `setupUpdates` through their props. Use `setupUpdates` to expose controls to the host page.
+
+```jsx
+import { createSignal } from 'solid-js'
+
+function HeaderApp (props) {
+  const { data, setupUpdates } = props
   const [message, setMessage] = createSignal(data.greeting || 'Hello')
+  const [count, setCount] = createSignal(0)
 
-  setupUpdates ({   // Provides to visualContoller method 'changeMessage' 
-        changeMessage (update) {
-              setMessage(update)
-          }
-    })
+  function changeMessage (value) {
+    setMessage(value)
+  }
+
+  function increment () {
+    setCount(value => value + 1)
+  }
+
+  setupUpdates({
+    changeMessage,
+    increment,
+    getCount: () => count()
+  })
+
+  return (
+    <div>
+      <h2>{message()}</h2>
+      <p>Count: {count()}</p>
+      <button onClick={increment}>Increment</button>
+    </div>
+  )
 }
 ```
 
-The external call will look like this:
+Call exposed controls through the region alias:
 
 ```js
-html.getApp ( 'app' ).changeMessage ( 'New message content' )
+const app = html.getApp('header')
+if (app) {
+    app.changeMessage('New message content')
+    app.increment()
+}
 ```
 
-
-
-
-## Visual Controller Methods
-```js
-  publish : 'Render Solid app in container. Associate app instance with the container.'
-, getApp  : 'Returns app instance by container name'
-, destroy : 'Destroy app by using container name '
-, has     : 'Checks if app with specific "id" was published'
-```
-
-
-
-### VisualController.publish ()
-Publish a Solid app.
-```js
-html.publish ( component, props, containerID )
-```
-- **component**: *function*. Solid component
-- **props**: *object*. Solid components props
-- **containerID**: *string*. Id of the container where Solid-app will live.
-- **returns**: *Promise<Object>*. Update methods library if defined. Else will return an empty object;
-
-Example:
-```js
- let html = new VisualController ();
- html.publish ( Hi, { greeting: 'hi'}, 'app' )
-```
-
-Render component 'Hi' with prop 'greeting' and render it in html element with id "app".
-
-
-
-
-
-### VisualController.getApp ()
-Returns the library of functions provided from method `setupUpdates`. If Solid-app never called `setupUpdates`, result will be an empty object.
+## API
 
 ```js
- let controls = html.getApp ( containerID )
+  set     : 'Define a region by placing markers in the DOM'
+, publish : 'Mount a Solid app into a region by alias'
+, destroy : 'Unmount apps while keeping the region markers'
+, getApp  : 'Return the setupUpdates interface for a published app'
+, has     : 'Check whether an app is published in a region'
+, isEmpty : 'Check whether a region contains no app content'
+, list    : 'Return every alias registered via set'
+, reset   : 'Unmount all apps, clear state, and remove markers'
 ```
-- **containerID**: *string*. Id of the container.
 
-Example:
-```js
-let 
-      id = 'videoControls'
-    , controls = html.getApp ( id )
-    ;
-    // if app with 'id' doesn't exist -> returns false, 
-    // if app exists and 'setupUpdates' was not used -> returns {}
-    // in our case -> returns { changeMessage:f }
-if ( !controls )   console.error ( `App for id:"${id}" is not available` )
-else {
-        if ( controls.changeMessage )   controls.changeMessage ('new title') 
-   }
-```
-If visual controller(html) has a Solid app associated with this name will return it. Otherwise will return **false**.
+### `html.set(fn, ...args)`
 
-
-
-
-
-### VisualController.has ()
-Checks if app with specific "id" was published.
+Defines a region. The callback receives `{ start, end }` marker nodes and must attach both to the DOM. Its return value is the alias.
 
 ```js
- const has = html.has ( containerID )
+html.set(({ start, end }, locale) => {
+    document.querySelector('#main').append(start, end)
+    return `header-${locale}`
+}, 'en')
 ```
-- **containerID**: *string*. Id of the container.
-- **returns**: *boolean*. Returns true if app with specific id exists, false otherwise
 
+### `html.publish(alias, component, data?, extraParams?)`
 
-
-
-
-### VisualController.destroy ()
-Will destroy Solid app associated with this container name and container will become empty. Function will return 'true' on success and 'false' on failure. 
-Function will not delete content of provided container if there is no Solid app associated with it.
+Mounts a Solid component into a registered region. `data` is passed to the component as `props.data`; shared dependencies are available as `props.dependencies`. The method returns a promise resolving to the object registered with `setupUpdates`, or `false` on error.
 
 ```js
-html.destroy ( containerID )
+await html.publish('header', HeaderApp)
+await html.publish('header', HeaderApp, { greeting: 'Hi!' })
 ```
-- **containerID**: *string*. Id name.
 
+### `html.destroy(target?)`
 
+Unmounts published apps and empties their ranges while keeping the markers.
 
+```js
+html.destroy('header')              // true / false
+html.destroy()                      // number of apps destroyed
+html.destroy(['header', 'sidebar']) // number actually destroyed
+```
 
+### `html.getApp(alias)`
 
-### Extra
+Returns the control object provided through `setupUpdates`, or `false` when no app is published for the alias.
 
-Visual Controller has versions for few other front-end frameworks:
+### `html.has(alias)`
+
+Returns `true` when an app is currently published in the region, otherwise `false`.
+
+### `html.isEmpty(alias)`
+
+Returns whether the region contains no mounted app content. It returns `undefined` for an unknown alias.
+
+### `html.list()`
+
+Returns every alias registered through `set`, whether or not an app is currently published.
+
+```js
+html.list() // ['header', 'sidebar']
+```
+
+### `html.reset()`
+
+Unmounts all apps, clears internal state, removes all markers, and unregisters all aliases. Regions must be created again with `set()` before publishing.
+
+```js
+html.reset()
+```
+
+## Other framework versions
+
 - [Vue 3](https://github.com/PeterNaydenov/visual-controller-for-vue3)
 - [React](https://github.com/PeterNaydenov/visual-controller-for-react)
 - [Svelte 5](https://github.com/PeterNaydenov/visual-controller-for-svelte5)
@@ -160,22 +171,15 @@ Visual Controller has versions for few other front-end frameworks:
 - [Vue 2](https://github.com/PeterNaydenov/visual-controller-for-vue)
 - [Svelte 3 and 4](https://github.com/PeterNaydenov/visual-controller-for-svelte3)
 
-
-
-
-
 ## Links
 
 - [History of changes](https://github.com/PeterNaydenov/visual-controller-for-solid/blob/master/Changelog.md)
 - [License](https://github.com/PeterNaydenov/visual-controller-for-solid/blob/master/LICENSE)
 
-
-
 ## Credits
-'visual-controller-for-solid' is created and supported by Peter Naydenov
 
-
+`visual-controller-for-solid` is created and supported by Peter Naydenov.
 
 ## License
 
-'visual-controller-for-solid' is released under the [MIT license](https://github.com/PeterNaydenov/visual-controller-for-solid/blob/master/LICENSE)
+`visual-controller-for-solid` is released under the [MIT license](https://github.com/PeterNaydenov/visual-controller-for-solid/blob/master/LICENSE).
