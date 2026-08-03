@@ -1,51 +1,82 @@
 import VisualController from '/src/main.js'
-import Hello from '/demo/hello.jsx'
+import HeaderApp from '/demo/header.jsx'
+import SidebarApp from '/demo/sidebar.jsx'
 
-const 
-  html = new VisualController({})
-  , hasTextBlock = document.getElementById ( 'hasText' )
-  , updateMsgBtn = document.getElementById ( 'updateMsg' )
-  , incrementBtn = document.getElementById ( 'increment' )
-  , getCountBtn = document.getElementById ( 'getCount' )
-  , destroyBtn = document.getElementById ( 'destroy' )
-  , resultTextBlock = document.getElementById ( 'resultText' )
-  ;
+const
+      html              = new VisualController({})
+    , main              = document.getElementById ( 'main' )
+    , updateHeaderBtn   = document.getElementById ( 'updateHeader' )
+    , incrementBtn      = document.getElementById ( 'incrementHeader' )
+    , swapBtn           = document.getElementById ( 'swapApps' )
+    , destroyHeaderBtn  = document.getElementById ( 'destroyHeader' )
+    , destroySidebarBtn = document.getElementById ( 'destroySidebar' )
+    , resetBtn          = document.getElementById ( 'resetAll' )
+    , resultText        = document.getElementById ( 'resultText' )
+    , aliasesList       = document.getElementById ( 'aliasesList' )
+    ;
 
+function refreshAliases () {
+        aliasesList.textContent = html.list ().join ( ', ' ) || '-'
+    }
 
+html.set ( ( { start, end } ) => {
+        main.append ( start, end )
+        return 'header'
+    })
 
-html.publish ( Hello, { greeting: 'Hi from Solid!' }, 'app')
+html.set ( ( { start, end } ) => {
+        main.append ( start, end )
+        return 'sidebar'
+    })
+
+refreshAliases ()
+
+html.publish ( 'header', HeaderApp )
     .then ( updates => {
-            console.log ( 'App loaded with updates:', updates )
-            hasTextBlock.textContent = html.has('app')
+            resultText.textContent = 'Header published: ' + JSON.stringify ( Object.keys ( updates ) )
+            refreshAliases ()
         })
 
+html.publish ( 'sidebar', SidebarApp, { title: 'Items' } )
+    .then ( () => refreshAliases () )
 
+updateHeaderBtn.addEventListener ( 'click', () => {
+        const app = html.getApp ( 'header' )
+        if ( app )   app.changeMessage ( `Header updated at ${new Date().toLocaleTimeString()}` )
+    })
 
- updateMsgBtn.addEventListener ( 'click', () => {
-            const app = html.getApp ( 'app' )
-            if (app)   app.changeMessage ( `Updated at ${new Date().toLocaleTimeString()}` )
-      })
+incrementBtn.addEventListener ( 'click', () => {
+        const app = html.getApp ( 'header' )
+        if ( app )   app.increment ()
+    })
 
+let swapped = false
+swapBtn.addEventListener ( 'click', () => {
+        swapped = !swapped
+        const [ headerApp, sidebarApp ] = swapped
+                ? [ SidebarApp, HeaderApp ]
+                : [ HeaderApp, SidebarApp ]
+        html.publish ( 'header', headerApp )
+        html.publish ( 'sidebar', sidebarApp )
+        resultText.textContent = swapped
+                ? 'Swapped: header and sidebar exchanged apps'
+                : 'Restored: header and sidebar back to initial apps'
+    })
 
+destroyHeaderBtn.addEventListener ( 'click', () => {
+        const ok = html.destroy ( 'header' )
+        resultText.textContent = 'Destroy header: ' + ok
+        refreshAliases ()
+    })
 
- incrementBtn.addEventListener ( 'click', () => {
-            const app = html.getApp('app')
-            if (app) app.increment()
-      })
+destroySidebarBtn.addEventListener ( 'click', () => {
+        const ok = html.destroy ( 'sidebar' )
+        resultText.textContent = 'Destroy sidebar: ' + ok
+        refreshAliases ()
+    })
 
-
-
-getCountBtn.addEventListener ( 'click', () => {
-            const app = html.getApp ( 'app' )
-            if ( app ) {
-                resultTextBlock.textContent = app.getCount ()
-              }
-      })
-
-
-
-destroyBtn.addEventListener ( 'click', () => {
-            const result = html.destroy ( 'app' )
-            resultTextBlock.textContent = 'Destroyed: ' + result
-            hasTextBlock.textContent = html.has ( 'app' )
-      })
+resetBtn.addEventListener ( 'click', () => {
+        html.reset ()
+        resultText.textContent = 'Reset all'
+        refreshAliases ()
+    })
