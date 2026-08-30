@@ -2,6 +2,11 @@
 
 
 
+## 2.0.1 (2026-08-30)
+- [x] Dependency update. Solid-js v1.9.15;
+
+
+
 ## 2.0.0 (2026-08-03)
 - [x] **Breaking change.** Region-based API. The v1 `id`-based API (`publish(component, data, id)` etc.) is removed. Regions are defined with the inlined dim subset (see `src/dim.js`) via the new `set` method, which mirrors `dim.set` exactly.
 - [x] New API: `set`, `publish(alias, component, data?, extraParams?)`, `destroy`, `has`, `getApp`, `isEmpty`, `list`, `reset`.
