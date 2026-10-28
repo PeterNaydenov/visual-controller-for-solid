@@ -13,11 +13,13 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
-    "ignoreDeprecations": "6.0",
     "allowSyntheticDefaultImports": true,
     "emitDeclarationOnly": true,
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["src/main.js"]
+  "include": [
+    "src/main.js",
+    "src/index.ts"
+  ]
 }
