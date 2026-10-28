@@ -7,7 +7,7 @@
   "type": "module",
   "main": "src/main.js",
   "module": "dist/visual-controller-for-solid.esm.js",
-  "types": "dist/main.d.ts",
+  "types": "./dist/index.d.ts",
   "unpkg": "dist/visual-controller-for-solid.umd.js",
   "files": [
     "dist",
@@ -19,14 +19,21 @@
   },
   "exports": {
     ".": {
-      "import": "dist/visual-controller-for-solid.esm.js",
-      "require": "dist/visual-controller-for-solid.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/visual-controller-for-solid.esm.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/visual-controller-for-solid.cjs"
+      },
+      "default": "./dist/visual-controller-for-solid.esm.js"
     }
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build && npm run types",
-    "types": "tsc -p tsconfig.types.json",
+    "types": "tsc -p tsconfig.types.json && node scripts/generate-cjs-types.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "cover": "vitest run --coverage"
