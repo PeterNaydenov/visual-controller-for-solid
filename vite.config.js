@@ -9,7 +9,7 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/main.js'),
+      entry: resolve(import.meta.dirname, 'src/main.js'),
       name: 'VisualControllerForSolid',
       formats: ['es', 'cjs', 'umd'],
       fileName: (format) => {
